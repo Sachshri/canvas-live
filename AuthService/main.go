@@ -1,11 +1,11 @@
 package main
 
 import (
+	"auth-service/handler"
+	"auth-service/repository"
 	"context"
 	"fmt"
 	"log"
-	"main-service/handler"
-	"main-service/repository"
 	"net/http"
 	"time"
 

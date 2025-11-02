@@ -1,10 +1,10 @@
 package repository
 
 import (
+	"auth-service/model"
 	"context"
 	"fmt"
 	"log"
-	"main-service/model"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"

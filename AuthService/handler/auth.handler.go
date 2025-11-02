@@ -1,12 +1,12 @@
 package handler
 
 import (
+	"auth-service/model"
+	"auth-service/repository"
+	"auth-service/utils"
 	"context"
 	"encoding/json"
 	"fmt"
-	"main-service/model"
-	"main-service/repository"
-	"main-service/utils"
 	"net/http"
 	"strings"
 	"time"
