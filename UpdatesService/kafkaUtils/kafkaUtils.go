@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	KafkaBroker = "localhost:9092"
-	// Topic       = "document-updates"
+	KafkaBroker = "canvas-live-kafka:9092"
+	Topic       = "document-updates"
 )
 
 func ProduceMessage(p *kafka.Producer, topic string, message []byte) error {

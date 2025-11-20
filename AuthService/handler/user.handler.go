@@ -9,9 +9,9 @@ import (
 )
 
 type UserDto struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
+	ID       string `json:"id"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
 }
 
 type UserHandler struct {
@@ -38,7 +38,7 @@ func (h UserHandler) RetrieveSearchedUsers(w http.ResponseWriter, r *http.Reques
 
 		userDtos := []UserDto{}
 		for _, user := range users {
-			userDto := UserDto{ID: user.ID.Hex(), Name: user.Name, Email: user.Email}
+			userDto := UserDto{ID: user.ID.Hex(), Username: user.Username, Email: user.Email}
 			userDtos = append(userDtos, userDto)
 		}
 

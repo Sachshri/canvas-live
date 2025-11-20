@@ -4,6 +4,8 @@ import (
 	"context"
 	"document-service/model"
 	"fmt"
+	"log"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -22,6 +24,43 @@ func NewDocumentRepository(client *mongo.Client, database string, collection str
 		collection:                coll,
 		sharedDocRecordCollection: shared,
 	}
+}
+
+func (r *DocumentRepository) FindDocumentByID(ctx context.Context, docID string) (*model.Document, error) {
+	// We derive a context with a timeout from the request context
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	// 1. Convert the string ID to a primitive.ObjectID
+	objectID, err := primitive.ObjectIDFromHex(docID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid document ID format: %w", err)
+	}
+
+	// 2. Define the filter
+	filter := bson.M{"_id": objectID}
+
+	// 3. Execute FindOne
+	var document model.Document
+
+	// Chain FindOne with Decode.
+	err = r.collection.FindOne(ctx, filter).Decode(&document)
+
+	// 4. Handle Errors
+	if err != nil {
+		// A. Check for the specific "Not Found" error
+		if err == mongo.ErrNoDocuments {
+			// Return nil document and nil error (success, but nothing found)
+			return nil, nil
+		}
+
+		// B. Handle other system/database errors
+		log.Printf("[Repository] Database query failed: %v", err)
+		return nil, fmt.Errorf("database query failed: %w", err)
+	}
+
+	// 5. Return the successfully decoded document
+	return &document, nil
 }
 
 func (r *DocumentRepository) CreateNewDocument(ctx context.Context, title string, ownerId string) (model.Document, error) {

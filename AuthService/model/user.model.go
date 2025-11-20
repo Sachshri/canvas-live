@@ -10,7 +10,7 @@ import (
 type User struct {
 	// primitive.ObjectID is the standard type for MongoDB's _id field.
 	ID       primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
-	Name     string             `bson:"name" json:"name"`
+	Username string             `bson:"name" json:"username"`
 	Email    string             `bson:"email" json:"email"`
 	Password string             `bson:"password" json:"password"`
 	JoinedAt time.Time          `bson:"joinedAt" json:"joinedAt"`

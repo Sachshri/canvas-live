@@ -38,7 +38,7 @@ func connectDB(uri string) *mongo.Client {
 
 func main() {
 	// Connect to DB
-	mongoURI := "mongodb://localhost:27017"
+	mongoURI := "mongodb://canvas-live-mongodb:27017"
 	client := connectDB(mongoURI)
 
 	// Setup repositories
@@ -51,11 +51,11 @@ func main() {
 
 	// Server
 	mux := http.NewServeMux()
-	mux.Handle("/health", healthHandler)
-	mux.Handle("/register", http.HandlerFunc(authHandler.RegisterUser))
-	mux.Handle("/login", http.HandlerFunc(authHandler.LoginUser))
-	mux.Handle("/authenticate", http.HandlerFunc(authHandler.AuthenticateRequest))
-	mux.Handle("/users", http.HandlerFunc(userHandler.RetrieveSearchedUsers))
+	mux.Handle("/auth/health", healthHandler)
+	mux.Handle("/auth/register", http.HandlerFunc(authHandler.RegisterUser))
+	mux.Handle("/auth/login", http.HandlerFunc(authHandler.LoginUser))
+	mux.Handle("/auth/authenticate", http.HandlerFunc(authHandler.AuthenticateRequest))
+	mux.Handle("/auth/users", http.HandlerFunc(userHandler.RetrieveSearchedUsers))
 
 	finalMux := middleware.RequestLoggingMiddleware(mux)
 	fmt.Println("Starting server on port 8081...")

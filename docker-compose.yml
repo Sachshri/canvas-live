@@ -1,0 +1,141 @@
+services:
+    mongodb:
+      image: mongo
+      container_name: canvas-live-mongodb
+      ports:
+        - "27017:27017"
+    
+    zookeeper:
+      image: confluentinc/cp-zookeeper:latest
+      hostname: zookeeper
+      container_name: zookeeper
+      ports:
+        - "2181:2181" # Expose Zookeeper's client port
+      environment:
+        ZOOKEEPER_CLIENT_PORT: 2181
+        ZOOKEEPER_TICK_TIME: 2000
+
+    # 2. Kafka Broker Service
+    kafka:
+      image: confluentinc/cp-kafka:7.4.0
+      hostname: kafka
+      container_name: canvas-live-kafka
+      depends_on:
+        - zookeeper # Ensure Zookeeper starts before Kafka
+      ports:
+        # Expose port 9092 for external clients (host machine)
+        - "29092:9092" 
+      environment:
+        KAFKA_BROKER_ID: 1
+        
+        # Connect Kafka to Zookeeper using the service name 'zookeeper'
+        KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+        
+        # Explicitly disable KRaft roles to force ZooKeeper mode
+        KAFKA_PROCESS_ROLES: ''
+        
+        # Define listeners for internal and external communication
+        # INTERNAL: For Docker-to-Docker communication
+        # EXTERNAL: For Host-to-Docker communication
+        
+        # 1. Map Listener Names to Security Protocols (CRITICAL FIX)
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+        
+        # 2. Define Inter-Broker Communication Listener
+        KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+        
+        # 3. Define Listeners (Where Kafka binds ports)
+        # Internal listens on all interfaces at 9092
+        # External listens on all interfaces at 29092
+        KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:29092
+
+        # 4. Define Advertised Listeners (What clients connect to)
+        # Internal clients (other containers) use 'kafka:9092'
+        # External clients (host machine) use 'localhost:9092'
+        # NOTE: For external, we map the internal 29092 to host 9092 via ports section
+        KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:29092
+        
+        # Auto-create topics
+        KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+        
+        # Replication factor for single broker
+        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+    kafka-ui:
+      image: provectuslabs/kafka-ui:latest
+      container_name: kafka-ui
+      ports:
+        - "8080:8080" # Access the UI on your host machine at http://localhost:8080
+      depends_on:
+        - kafka
+      environment:
+        # CRITICAL: This is the internal Docker network address for Kafka
+        KAFKA_CLUSTERS_0_NAME: MyLocalKafkaCluster
+        KAFKA_CLUSTERS_0_BOOTSTRAP_SERVERS: kafka:9092 # Use the internal Docker network address
+        
+        # Optional: Add Zookeeper host
+        KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181 
+
+    # 2. Redis Cache Service
+    redis:
+      image: redis:7-alpine # Use a small, stable image
+      hostname: redis
+      container_name: canvas-live-redis
+      # Expose port 6379 only for host access (optional, but good for debugging)
+      ports:
+        - "6379:6379" 
+      command: ["redis-server", "--appendonly", "yes"] # Enable persistence (AOF)
+#       volumes:
+#         - redis_data:/data # Volume to keep data persistent across restarts
+
+    api-gateway:
+      build:
+        context: ./Gateway/
+      container_name: canvas-live-api-gateway
+      ports:
+        - "80:80"
+      depends_on:
+        - auth-service
+        - document-service 
+        - updates-service
+
+    auth-service:
+      build:
+        context: ./AuthService/
+      container_name: canvas-live-auth-service 
+      ports:
+        - "8081:8081"
+      depends_on:
+        - mongodb 
+
+    document-service:
+      build:
+        context: ./DocumentService/
+      container_name: canvas-live-document-service 
+      ports:
+        - "8082:8082"
+      depends_on:
+        - auth-service
+        - mongodb 
+      
+    updates-consumer:
+      build:
+        context: ./DocumentUpdatesConsumer/
+      container_name: canvas-live-updates-consumer
+      depends_on:
+      - kafka
+      - mongodb 
+    
+    updates-service:
+      build:
+        context: ./UpdatesService/
+      container_name: canvas-live-updates-service 
+      ports:
+        - "8083:8083"
+      depends_on:
+        - kafka
+        - redis
+        - mongodb
+
+# volumes:
+#   redis_data:

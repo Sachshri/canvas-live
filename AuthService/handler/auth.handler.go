@@ -94,7 +94,7 @@ func (h AuthHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 5. Generate JWT
-	jwtToken, err := utils.CreateToken(user.ID.Hex(), loginData.Email)
+	jwtToken, err := utils.CreateToken(user.ID.Hex(), loginData.Email, user.Username)
 	if err != nil {
 		http.Error(w, "Error signing you in - Try again.", http.StatusInternalServerError)
 	}
@@ -110,10 +110,12 @@ func (h AuthHandler) AuthenticateRequest(w http.ResponseWriter, r *http.Request)
 
 	if authHeader == "" {
 		http.Error(w, "Authorization header required", http.StatusUnauthorized)
+		return
 	}
 
 	if !strings.HasPrefix(authHeader, "Bearer ") {
 		http.Error(w, "Invalid authorization format: expected 'Bearer <token>'", http.StatusBadRequest)
+		return
 	}
 
 	token := authHeader[len("Bearer "):]
@@ -122,9 +124,23 @@ func (h AuthHandler) AuthenticateRequest(w http.ResponseWriter, r *http.Request)
 	claims, err := utils.ParseToken(token)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
 	}
 
 	// add UserID to request object
-	fmt.Fprintf(w, "Access granted: %s", claims)
+	// --- RESPONSE HEADER MODIFICATION (CRITICAL STEP) ---
+
+	// 1. Set the custom headers on the ResponseWriter (w)
+	// These are the headers Nginx's auth_request_set will read.
+	w.Header().Set("X-User-ID", claims.UserID)
+	w.Header().Set("X-Username", claims.Username)
+	// w.Header().Set("X-User-Email", claims.UserEmail) // If you use the email header
+
+	// 2. IMPORTANT: Send a 2xx Status Code (usually 200 OK)
+	// Nginx requires a 2xx response from the auth_request to proceed with proxy_pass.
+	// We send a minimal response and a 200 status code.
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "Auth Success") // This response body is usually ignored by Nginx.
+	// fmt.Fprintf(w, "Access granted: %s", claims)
 
 }

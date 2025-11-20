@@ -1,8 +1,8 @@
 package websocket
 
 import (
-	"UpdatesReceiverAndTransmitterService/kafkaUtils"
-	"UpdatesReceiverAndTransmitterService/types"
+	"UpdatesService/kafkaUtils"
+	"UpdatesService/types"
 	"encoding/json"
 	"fmt"
 

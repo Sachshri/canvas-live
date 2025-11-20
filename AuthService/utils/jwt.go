@@ -8,20 +8,22 @@ import (
 )
 
 type CustomClaims struct {
-	UserID string `json:"user_id`
-	Email  string `json:"email"`
+	UserID   string `json:"user_id`
+	Username string `json:"username"`
+	Email    string `json:"email"`
 	jwt.RegisteredClaims
 }
 
 var jwtSecret = []byte("my_super_secret_key")
 
-func CreateToken(userID string, email string) (string, error) {
+func CreateToken(userID string, email string, username string) (string, error) {
 	expirationTime := time.Now().Add(24 * time.Hour)
 
 	// create custom claims object
 	claims := &CustomClaims{
-		UserID: userID,
-		Email:  email,
+		UserID:   userID,
+		Email:    email,
+		Username: username,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

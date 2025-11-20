@@ -12,7 +12,7 @@ type MongoConfigStruct struct {
 }
 
 var MongoConfig = MongoConfigStruct{
-	MongoUri:                      "mongodb://localhost:27017",
+	MongoUri:                      "mongodb://canvas-live-mongodb:27017",
 	DatabaseName:                  "default",
 	UserCollectionName:            "user",
 	DocumentCollectionName:        "document",

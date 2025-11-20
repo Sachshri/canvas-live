@@ -1,8 +1,8 @@
 package websocket
 
 import (
-	"UpdatesReceiverAndTransmitterService/redis"
-	"UpdatesReceiverAndTransmitterService/types"
+	"UpdatesService/redis"
+	"UpdatesService/types"
 	"context"
 	"encoding/json"
 	"fmt"
